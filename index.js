@@ -81,4 +81,8 @@ let getADP = (callback) => {
 	});
 };
 
-module.exports = getADP;
+let getPlayerStats = (player, token, callback) => {
+
+};
+
+module.exports = {getADP, getPlayerStats};
