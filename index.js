@@ -111,17 +111,41 @@ let scrapeADP = (html) => {
 let scrapePlayerStats = (player, html) => {
 	let playerStats = {
 		name: player.name,
+		ir: {},
 		year: {}
 	};
 	let $ = cheerio.load(html);
-	let years = $('#rushing_and_receiving tr.full_table');
+	let div = $('#rushing_and_receiving');
+	console.log(div.html());
+	$ = cheerio.load($.html());
+	let years = null;
+	if (player.pos == 'QB') {
+		$('*').contents().each((i, obj) => {
+			if (obj.type == 'comment') {
+				let com = cheerio.load(obj.data);
+				let rr = com('#rushing_and_receiving tr.full_table');
+				if (rr.length > 0) {
+					years = rr;
+				}
+			}
+		});
+	} else {
+		years = $('#rushing_and_receiving tr.full_table');
+	}
+	let ir = $('#injury');
+	if (ir) {
+		let info = ir.find('p').text();
+		playerStats.ir = {
+			injury: info
+		}
+	}
 
 	years.each((i, obj) => {
 		let row = $(obj).find('td');
 		let year = years.find('th').eq(i).text().substring(0,4);
 		playerStats.year[year] = {
 			age: $(obj).find('td').eq(0).text(),
-			team: $(obj).find('td').eq(1).text(),
+			team: player.team,
 			position: player.pos,
 			number: $(obj).find('td').eq(3).text(),
 			games: $(obj).find('td').eq(4).text(),
@@ -155,7 +179,29 @@ let scrapePlayerStats = (player, html) => {
 			},
 			fumbles: $(obj).find('td').eq(27).text(),
 		}
-	})
+		if (player.pos == 'QB') {
+			let rows = $('#passing tr');
+			rows.each((i, obj) => {
+				let row = $(obj).find('td');
+				let year = row.eq(0).text().substring(0,4);
+				playerStats.year[year].passing = {
+					qb_record: row.eq(6).text(),
+					completions: row.eq(7).text(),
+					yards: row.eq(8).text(),
+					touchdowns: row.eq(9).text(),
+					touchdown_percentage: row.eq(10).text(),
+					interceptions: row.eq(11).text(),
+					interception_percentage: row.eq(12).text(),
+					longest_completion: row.eq(13).text(),
+					yards_per_attempt: row.eq(14).text(),
+					adjusted_yards_per_attempt: row.eq(15).text(),
+					yards_per_completion: row.eq(16).text(),
+					yards_per_game: row.eq(17).text(),
+					qbr: row.eq(18).text()
+				}
+			});
+		}
+	});
 
 	return(playerStats);
 }
@@ -217,5 +263,7 @@ let getPlayerStats = (player) => {
 		});
 	});
 };
+
+
 
 module.exports = {getADP, getPlayerStats};
