@@ -117,6 +117,7 @@ let scrapeADP = (html) => {
 let scrapePlayerStats = (player, html) => {
 	let playerStats = {
 		name: player.name,
+		picture: '',
 		ir: {},
 		career: []
 	};
@@ -127,11 +128,8 @@ let scrapePlayerStats = (player, html) => {
     + '|<[?][^>]*>?',  // A pseudo-comment
     'g');
     let data = html.replace(COMMENT_PSEUDO_COMMENT_OR_LT_BANG, "");
-
 	let $ = cheerio.load(data);
 	let years = $('#rushing_and_receiving tr.full_table');
-
-
 	let ir = $('#injury');
 	if (ir) {
 		let info = ir.find('p').text();
@@ -145,6 +143,9 @@ let scrapePlayerStats = (player, html) => {
 			};
 		}
 	}
+
+	let picture = $('[itemscope=image]').attr('src');
+	playerStats.picture = picture;
 
 	years.each((i, obj) => {
 		let row = $(obj).find('td');
