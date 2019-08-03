@@ -121,6 +121,7 @@ let scrapePlayerStats = (player, html) => {
 		ir: {},
 		career: []
 	};
+	
 	var COMMENT_PSEUDO_COMMENT_OR_LT_BANG = new RegExp(
     '<!--[\\s\\S]*?(?:-->)?'
     + '<!---+>?'  // A comment with no body
@@ -191,31 +192,27 @@ let scrapePlayerStats = (player, html) => {
 	});
 
 	if (player.pos == 'QB') {
-			let rows = $('#passing tr.full_table');
-			rows.each((i, obj) => {
-				let row = $(obj).find('td');
-				let year = years.find('th').eq(i).text().substring(0,4);
-				playerStats.career[i].skills.push(
-				{
-					qb_record: row.eq(6).text(),
-					completions: row.eq(7).text(),
-					yards: row.eq(8).text(),
-					touchdowns: row.eq(9).text(),
-					touchdown_percentage: row.eq(10).text(),
-					interceptions: row.eq(11).text(),
-					interception_percentage: row.eq(12).text(),
-					longest_completion: row.eq(13).text(),
-					yards_per_attempt: row.eq(14).text(),
-					adjusted_yards_per_attempt: row.eq(15).text(),
-					yards_per_completion: row.eq(16).text(),
-					yards_per_game: row.eq(17).text(),
-					qbr: row.eq(18).text()
-				});
-
+		let rows = $('#passing tr.full_table');
+		rows.each((i, obj) => {
+			let row = $(obj).find('td');
+			let year = years.find('th').eq(i).text().substring(0,4);
+			playerStats.career[i].skills.push({
+				qb_record: row.eq(6).text(),
+				completions: row.eq(7).text(),
+				yards: row.eq(8).text(),
+				touchdowns: row.eq(9).text(),
+				touchdown_percentage: row.eq(10).text(),
+				interceptions: row.eq(11).text(),
+				interception_percentage: row.eq(12).text(),
+				longest_completion: row.eq(13).text(),
+				yards_per_attempt: row.eq(14).text(),
+				adjusted_yards_per_attempt: row.eq(15).text(),
+				yards_per_completion: row.eq(16).text(),
+				yards_per_game: row.eq(17).text(),
+				qbr: row.eq(18).text()
 			});
+		});
 	}
-
-
 	return(playerStats);
 }
 
@@ -236,45 +233,39 @@ let getADP = () => {
 	});
 };
 
+let getLastInitial = (name) => {
+	let nameArray = name.split(' ');
+	let initial = nameArray[nameArray.length -1].charAt(0);
+	return initial;	
+}
+
 let getPlayerStats = (player) => {
 	let pfr = 'https://cors-anywhere.herokuapp.com/https://www.pro-football-reference.com';
 	let team = pfrDict[player.team];
 	let teamPage = `${pfr}/teams/${team}`;
+	let initial = getLastInitial(player.name);
 	return new Promise((resolve, reject) => {
-		axios.get(teamPage, {headers: {'origin': 1}})
+		let playersPageURL = `${pfr}/players/${initial}`;
+		axios.get(playersPageURL, {headers: {'origin': 1}})
 		.then(res => {
-			let teamSum = cheerio.load(res.data);
-			teamSum('#bottom_nav_container li a').each((i, obj) => {
-				if (teamSum(obj).text() == 'Starting Lineups') {
-					year = teamSum(obj).attr('href');
-					let teamYearURL = `${pfr}${year}`;
-					axios.get(teamYearURL, {headers: {'origin': 1}})
+			let playersPage = cheerio.load(res.data);
+			playersPage('#div_players p b a').each((i, obj) => {
+				if (playersPage(obj).text().toLowerCase() === player.name.toLowerCase()) {
+					let statsPageRef = playersPage(obj).attr('href');
+					let statsPageURL = `${pfr}${statsPageRef}`;
+					axios.get(statsPageURL, {headers: {'origin': 1}})
 					.then(res => {
-						let $ = cheerio.load(res.data);
-						$('a').each((i, obj) => {
-							if ($(obj).text() == player.name) {
-								let statsPageRef = $(obj).attr('href');
-								let statsPageURL = `${pfr}${statsPageRef}`;
-								axios.get(statsPageURL, {headers: {'origin': 1}})
-								.then(res => {
-									resolve(scrapePlayerStats(player, res.data));
-								})
-								.catch(err => {
-									reject(err);
-								});
-							}
-						});
+						resolve(scrapePlayerStats(player, res.data));
 					})
 					.catch(err => {
 						reject(err);
 					});
 				}
-			}, () => { reject('Didnt Find URL!'); });
-		})
+			});
+		}, () => { reject('Didnt find anything with this URL!') })
 		.catch(err => {
 			reject(err);
-		});
+		}); 
 	});
 };
-
 module.exports = {getADP, getPlayerStats};
