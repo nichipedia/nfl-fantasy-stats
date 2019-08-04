@@ -115,13 +115,6 @@ let scrapeADP = (html) => {
 };
 
 let scrapePlayerStats = (player, html) => {
-	let playerStats = {
-		name: player.name,
-		picture: '',
-		ir: {},
-		career: []
-	};
-	
 	var COMMENT_PSEUDO_COMMENT_OR_LT_BANG = new RegExp(
     '<!--[\\s\\S]*?(?:-->)?'
     + '<!---+>?'  // A comment with no body
@@ -130,7 +123,28 @@ let scrapePlayerStats = (player, html) => {
     'g');
     let data = html.replace(COMMENT_PSEUDO_COMMENT_OR_LT_BANG, "");
 	let $ = cheerio.load(data);
-	let years = $('#rushing_and_receiving tr.full_table');
+	let picture = $('[itemscope=image]').attr('src');
+	
+	if (player.pos === 'DEF') {
+		let row = $('#defense tfoot tr td');	
+		let defStats = {
+			name: player.name,
+			picture: picture,
+			interceptions: row.eq(5).text(),
+			pick_six: row.eq(7).text(),
+			sacks: row.eq(15).text(),
+			forced_fumbles: row.eq(10).text(),
+			safties: row.eq(21).text()	
+		}
+		return defStats;
+	}
+
+	let playerStats = {
+		name: player.name,
+		picture: picture,
+		ir: {},
+		career: []
+	};
 	let ir = $('#injury');
 	if (ir) {
 		let info = ir.find('p').text();
@@ -145,75 +159,117 @@ let scrapePlayerStats = (player, html) => {
 		}
 	}
 
-	let picture = $('[itemscope=image]').attr('src');
-	playerStats.picture = picture;
 
-	years.each((i, obj) => {
-		let row = $(obj).find('td');
-		let year = years.find('th').eq(i).text().substring(0,4);
-		playerStats.career.push({
-			age: $(obj).find('td').eq(0).text(),
-			team: player.team,
-			season: year,
-			position: player.pos,
-			number: $(obj).find('td').eq(3).text(),
-			games: $(obj).find('td').eq(4).text(),
-			games_started: $(obj).find('td').eq(5).text(),
-			skills: [
-			{
-				attempts: $(obj).find('td').eq(6).text(),
-				yards: $(obj).find('td').eq(7).text(),
-				touchdowns: $(obj).find('td').eq(8).text(),
-				longest_attempt: $(obj).find('td').eq(9).text(),
-				yards_per_attempt: $(obj).find('td').eq(10).text(),
-				yards_per_game: $(obj).find('td').eq(11).text(),
-				attempts_per_game: $(obj).find('td').eq(12).text()
-			},
-			{
-				targets: $(obj).find('td').eq(13).text(),
-				receptions: $(obj).find('td').eq(14).text(),
-				yards: $(obj).find('td').eq(15).text(),
-				yard_per_reception: $(obj).find('td').eq(16).text(),
-				touchdowns: $(obj).find('td').eq(17).text(),
-				longest_reception: $(obj).find('td').eq(18).text(),
-				receptions_per_game: $(obj).find('td').eq(19).text(),
-				yards_per_game: $(obj).find('td').eq(20).text(),
-				catch_percentage: $(obj).find('td').eq(21).text(),
-				yards_per_target: $(obj).find('td').eq(22).text()
-			}],
-			summary: {
-				touches: $(obj).find('td').eq(23).text(),
-				yards_per_touch: $(obj).find('td').eq(24).text(),
-				scrimmage: $(obj).find('td').eq(25).text(),
-				total_touchdowns: $(obj).find('td').eq(26).text(),
-			},
-			fumbles: $(obj).find('td').eq(27).text(),
-		});
-	});
-
-	if (player.pos == 'QB') {
-		let rows = $('#passing tr.full_table');
-		rows.each((i, obj) => {
+	if (player.pos === 'RB' || player.pos === 'QB') {
+		let years = $('#rushing_and_receiving tr.full_table');
+		years.each((i, obj) => {
 			let row = $(obj).find('td');
 			let year = years.find('th').eq(i).text().substring(0,4);
-			playerStats.career[i].skills.push({
-				qb_record: row.eq(6).text(),
-				completions: row.eq(7).text(),
-				yards: row.eq(8).text(),
-				touchdowns: row.eq(9).text(),
-				touchdown_percentage: row.eq(10).text(),
-				interceptions: row.eq(11).text(),
-				interception_percentage: row.eq(12).text(),
-				longest_completion: row.eq(13).text(),
-				yards_per_attempt: row.eq(14).text(),
-				adjusted_yards_per_attempt: row.eq(15).text(),
-				yards_per_completion: row.eq(16).text(),
-				yards_per_game: row.eq(17).text(),
-				qbr: row.eq(18).text()
+			playerStats.career.push({
+				age: row.eq(0).text(),
+				team: row.eq(1).find('a').attr('title'),
+				season: year,
+				position: player.pos,
+				number: row.eq(3).text(),
+				games: row.eq(4).text(),
+				games_started: row.eq(5).text(),
+				skills: [
+				{
+					attempts: row.eq(6).text(),
+					yards: row.eq(7).text(),
+					touchdowns: row.eq(8).text(),
+					longest_attempt: row.eq(9).text(),
+					yards_per_attempt: row.eq(10).text(),
+					yards_per_game: row.eq(11).text(),
+					attempts_per_game: row.eq(12).text()
+				},
+				{
+					targets: row.eq(13).text(),
+					receptions: row.eq(14).text(),
+					yards: row.eq(15).text(),
+					yard_per_reception: row.eq(16).text(),
+					touchdowns: row.eq(17).text(),
+					longest_reception: row.eq(18).text(),
+					receptions_per_game: row.eq(19).text(),
+					yards_per_game: row.eq(20).text(),
+					catch_percentage: row.eq(21).text(),
+					yards_per_target: row.eq(22).text()
+				}],
+				summary: {
+					touches: row.eq(23).text(),
+					yards_per_touch: row.eq(24).text(),
+					scrimmage: row.eq(25).text(),
+					total_touchdowns: row.eq(26).text(),
+				},
+				fumbles: row.eq(27).text(),
+			});
+		});
+		if (player.pos == 'QB') {
+			let rows = $('#passing tr.full_table');
+			rows.each((i, obj) => {
+				let row = $(obj).find('td');
+				let year = years.find('th').eq(i).text().substring(0,4);
+				playerStats.career[i].skills.push({
+					qb_record: row.eq(6).text(),
+					completions: row.eq(7).text(),
+					yards: row.eq(8).text(),
+					touchdowns: row.eq(9).text(),
+					touchdown_percentage: row.eq(10).text(),
+					interceptions: row.eq(11).text(),
+					interception_percentage: row.eq(12).text(),
+					longest_completion: row.eq(13).text(),
+					yards_per_attempt: row.eq(14).text(),
+					adjusted_yards_per_attempt: row.eq(15).text(),
+					yards_per_completion: row.eq(16).text(),
+					yards_per_game: row.eq(17).text(),
+					qbr: row.eq(18).text()
+				});
+			});
+		}
+	} else if (player.pos === 'WR' || player.pos === 'TE') {
+		let years = $('#receiving_and_rushing tr.full_table');
+		years.each((i, obj) => {
+			let row = $(obj).find('td');
+			let year = years.find('th').eq(i).text().substring(0,4);
+			playerStats.career.push({
+				age: row.eq(0).text(),
+				team: row.eq(1).find('a').attr('title'),
+				season: year,
+				position: player.pos,
+				number: row.eq(3).text(),
+				games: row.eq(4).text(),
+				games_started: row.eq(5).text(),
+				skills: [{
+					targets: row.eq(6).text(),
+					receptions: row.eq(7).text(),
+					yards: row.eq(8).text(),
+					yard_per_reception: row.eq(9).text(),
+					touchdowns: row.eq(10).text(),
+					longest_reception: row.eq(11).text(),
+					receptions_per_game: row.eq(12).text(),
+					yards_per_game: row.eq(13).text(),
+					catch_percentage: row.eq(14).text(),
+					yards_per_target: row.eq(15).text()
+				}, {
+					attempts: row.eq(16).text(),
+					yards: row.eq(17).text(),
+					touchdowns: row.eq(18).text(),
+					longest_attempt: row.eq(19).text(),
+					yards_per_attempt: row.eq(20).text(),
+					yards_per_game: row.eq(21).text(),
+					attempts_per_game: row.eq(22).text()
+				}],
+				summary: {
+					touches: row.eq(23).text(),
+					yards_per_touch: row.eq(24).text(),
+					scrimmage: row.eq(25).text(),
+					total_touchdowns: row.eq(26).text(),
+				},
+				fumbles: row.eq(27).text(),
 			});
 		});
 	}
-	return(playerStats);
+	return playerStats;
 }
 
 let getADP = () => {
@@ -234,7 +290,7 @@ let getADP = () => {
 };
 
 let getLastInitial = (name) => {
-	let nameArray = name.split(' ');
+	let nameArray = name.trim().toUpperCase().replace('JR.', '').replace(' JR', '').replace('JR ').split(' ');
 	let initial = nameArray[nameArray.length -1].charAt(0);
 	return initial;	
 }
@@ -244,13 +300,35 @@ let getPlayerStats = (player) => {
 	let team = pfrDict[player.team];
 	let teamPage = `${pfr}/teams/${team}`;
 	let initial = getLastInitial(player.name);
+	if (player.pos === 'DEF') {
+		return new Promise((resolve, reject) => {
+			axios.get(teamPage, {headers: {'origin': 1}})
+			.then(res => {
+				let $ = cheerio.load(res.data);
+				let year = $('[data-stat=year_id] a').eq(0).attr('href');
+				let teamYearSum = `${pfr}${year}`;
+				axios.get(teamYearSum, {headers: {'origin': 1}})
+				.then(res => {
+					resolve(scrapePlayerStats(player, res.data));
+				})
+				.catch(err => {
+					console.log(err);
+				});
+			})
+			.catch(err => {
+				console.log(err);
+			});
+		});
+	}
 	return new Promise((resolve, reject) => {
 		let playersPageURL = `${pfr}/players/${initial}`;
 		axios.get(playersPageURL, {headers: {'origin': 1}})
 		.then(res => {
 			let playersPage = cheerio.load(res.data);
 			playersPage('#div_players p b a').each((i, obj) => {
-				if (playersPage(obj).text().toLowerCase() === player.name.toLowerCase()) {
+				let pfrName = playersPage(obj).text().toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
+				let adpName = player.name.toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
+				if (pfrName === adpName) {
 					let statsPageRef = playersPage(obj).attr('href');
 					let statsPageURL = `${pfr}${statsPageRef}`;
 					axios.get(statsPageURL, {headers: {'origin': 1}})
@@ -261,8 +339,8 @@ let getPlayerStats = (player) => {
 						reject(err);
 					});
 				}
-			});
-		}, () => { reject('Didnt find anything with this URL!') })
+			}, () => { reject('Didnt find anything with this URL!') });
+		})
 		.catch(err => {
 			reject(err);
 		}); 
