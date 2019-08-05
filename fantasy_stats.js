@@ -268,6 +268,48 @@ let scrapePlayerStats = (player, html) => {
 				fumbles: row.eq(27).text(),
 			});
 		});
+	} else if (player.pos === 'PK') {
+		let years = $('#kicking tbody tr');
+		years.each((i, obj) => {
+			let row = $(obj).find('td');
+			let year = years.find('th').eq(i).text().substring(0,4);
+			playerStats.career.push({
+				age: row.eq(0).text(),
+				team: row.eq(1).find('a').attr('title'),
+				season: year,
+				position: player.pos,
+				number: row.eq(3).text(),
+				games: row.eq(4).text(),
+				'0-19': {
+					attempts: row.eq(6).text(),
+					made: row.eq(7).text()	
+				},
+				'20-29': {
+					attempts: row.eq(8).text(),
+					made: row.eq(9).text()	
+				},
+				'30-39': {
+					attempts: row.eq(10).text(),
+					made: row.eq(11).text()	
+				},
+				'40-49': {
+					attempts: row.eq(12).text(),
+					made: row.eq(13).text()	
+				},
+				'50+': {
+					attempts: row.eq(14).text(),
+					made: row.eq(15).text()
+				},
+				total: {
+					attempts: row.eq(16).text(),
+					made: row.eq(17).text()
+				},
+				extra_points: {
+					attempts: row.eq(20).text(),
+					made: row.eq(21).text()
+				}	
+			});
+		});
 	}
 	return playerStats;
 }
