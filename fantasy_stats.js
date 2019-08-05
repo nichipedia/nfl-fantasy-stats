@@ -367,11 +367,13 @@ let getPlayerStats = (player) => {
 		axios.get(playersPageURL, {headers: {'origin': 1}})
 		.then(res => {
 			let playersPage = cheerio.load(res.data);
-			playersPage('#div_players p b a').each((i, obj) => {
-				let pfrName = playersPage(obj).text().toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
+			playersPage('#div_players p b').each((i, obj) => {
+				let a = playersPage(obj).find('a').eq(0);
+				let pfrTag = playersPage(obj).html();
+				let pfrName = a.text().toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
 				let adpName = player.name.toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
-				if (pfrName === adpName) {
-					let statsPageRef = playersPage(obj).attr('href');
+				if (pfrName === adpName && pfrTag.search(player.pos) != -1) {
+					let statsPageRef = a.attr('href');
 					let statsPageURL = `${pfr}${statsPageRef}`;
 					axios.get(statsPageURL, {headers: {'origin': 1}})
 					.then(res => {
