@@ -370,9 +370,13 @@ let getPlayerStats = (player) => {
 			playersPage('#div_players p b').each((i, obj) => {
 				let a = playersPage(obj).find('a').eq(0);
 				let pfrTag = playersPage(obj).html();
+				let pos = player.pos;
+				if (player.pos === 'PK') {
+					pos = 'K';
+				}
 				let pfrName = a.text().toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
 				let adpName = player.name.toLowerCase().replace('jr.', '').replace(' jr', '').replace('jr ', '').replace("'", "");
-				if (pfrName === adpName && pfrTag.search(player.pos) != -1) {
+				if (pfrName === adpName && pfrTag.search(pos) != -1) {
 					let statsPageRef = a.attr('href');
 					let statsPageURL = `${pfr}${statsPageRef}`;
 					axios.get(statsPageURL, {headers: {'origin': 1}})
