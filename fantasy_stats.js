@@ -212,17 +212,20 @@ let scrapePlayerStats = (player, html) => {
 				playerStats.career[i].skills.push({
 					qb_record: row.eq(6).text(),
 					completions: row.eq(7).text(),
-					yards: row.eq(8).text(),
-					touchdowns: row.eq(9).text(),
-					touchdown_percentage: row.eq(10).text(),
-					interceptions: row.eq(11).text(),
-					interception_percentage: row.eq(12).text(),
-					longest_completion: row.eq(13).text(),
-					yards_per_attempt: row.eq(14).text(),
-					adjusted_yards_per_attempt: row.eq(15).text(),
-					yards_per_completion: row.eq(16).text(),
-					yards_per_game: row.eq(17).text(),
-					qbr: row.eq(18).text()
+					attempts: row.eq(8).text(),
+					completion_percentage: row.eq(9).text(),
+					yards: row.eq(10).text(),
+					touchdowns: row.eq(11).text(),
+					touchdown_percentage: row.eq(12).text(),
+					interceptions: row.eq(13).text(),
+					interception_percentage: row.eq(14).text(),
+					longest_completion: row.eq(15).text(),
+					yards_per_attempt: row.eq(16).text(),
+					adjusted_yards_per_attempt: row.eq(17).text(),
+					yards_per_completion: row.eq(18).text(),
+					yards_per_game: row.eq(19).text(),
+					qbr: row.eq(21).text(),
+					sacks: row.eq(22).text()
 				});
 			});
 		}
